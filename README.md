@@ -1,5 +1,5 @@
 # nginx config #
-```
+```nginx
 server {
     listen       80;
     server_name  ~^(?<project>\w+)\.domain.com$;
@@ -77,7 +77,7 @@ server {
 
 # prepare #
 
-```
+```shell
 cd /data/website
 mkdir deploy-hook-github
 cd deploy-hook-github
