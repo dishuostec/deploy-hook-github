@@ -33,7 +33,7 @@ chdir(WORKING_DIR);
 
 $commands = array(
     'echo $PWD',
-    'whoami',
+    //'whoami',
     'git fetch origin '.$ref,
     //'git reset --hard origin/'.$branch,
     //'git status',
@@ -41,16 +41,27 @@ $commands = array(
     //'git submodule sync',
     //'git submodule update',
     //'git submodule status',
-    'mkdir '.TARGET_DIR,
-    'git archive '.$branch.' | tar -x -C '.TARGET_DIR,
 );
+
+if (is_dir(TARGET_DIR)) {
+    // delete file
+    foreach ($data->commits as $commit) {
+        foreach ($commit->removed as $removed) {
+            $commands[] = 'rm -f '.TARGET_DIR.'/'.$removed;
+        }
+    }
+} else {
+    $commands[] = 'mkdir '.TARGET_DIR;
+}
+
+$commands[] = 'git archive '.$branch.' | tar -x -C '.TARGET_DIR;
 
 $output = '';
 foreach ($commands AS $command) {
     // Run it
     $tmp = shell_exec($command);
     // Output
-    $output .= "=== {$command} ===\n";
+    $output .= "# {$command}\n";
     $output .= $tmp."\n";
 }
 
