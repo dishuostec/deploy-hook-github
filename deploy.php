@@ -1,22 +1,14 @@
 <?php
-define('PROJECTS_DIR', '/data/website');
-
-$github_delivery = isset($_SERVER['HTTP_X_GITHUB_DELIVERY'])
-    ? $_SERVER['HTTP_X_GITHUB_DELIVERY'] : NULL;
-$github_event = isset($_SERVER['HTTP_X_GITHUB_EVENT'])
-    ? $_SERVER['HTTP_X_GITHUB_EVENT'] : NULL;
-
-if (is_null($github_delivery)) {
-    echo 'invalid request';
-    exit;
+if (file_exists('env.php')) {
+    include_once 'env.php';
 }
-
-if ($github_event !== 'push') {
-    echo $github_event;
-    exit;
-}
+defined('PROJECTS_DIR') || define('PROJECTS_DIR', '/data/website');
 
 $data = json_decode(file_get_contents('php://input'));
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo 'invalid json data';
+    exit;
+}
 
 $project = $data->repository->name;
 $ref = $data->ref;
