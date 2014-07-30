@@ -21,40 +21,38 @@ $data = json_decode(file_get_contents('php://input'));
 $project = $data->repository->name;
 $ref = $data->ref;
 $branch = substr($ref, 11);
-define('WORKING_DIR', PROJECTS_DIR.'/'.$project.'/.repo');
-define('TARGET_DIR', PROJECTS_DIR.'/'.$project.'/'.$branch);
+define('GIT_DIR', PROJECTS_DIR.'/'.$project.'/.repo');
+define('GIT', 'git --git-dir '.GIT_DIR.' ');
+define('WORK_DIR', PROJECTS_DIR.'/'.$project.'/'.$branch);
 
-if (! is_dir(WORKING_DIR)) {
-    printf('dir not exist: %s', WORKING_DIR);
+if (! is_dir(GIT_DIR)) {
+    printf('dir not exist: %s', GIT_DIR);
     exit;
 }
 
-chdir(WORKING_DIR);
+$work_dir_exist = is_dir(WORK_DIR);
+if (! $work_dir_exist) {
+    mkdir(WORK_DIR, 755, TRUE);
+}
+
+chdir(WORK_DIR);
 
 $commands = array(
     'echo $PWD',
     //'whoami',
-    'git fetch origin '.$ref,
-    //'git reset --hard origin/'.$branch,
-    //'git status',
-    'git show --summary',
-    //'git submodule sync',
-    //'git submodule update',
-    //'git submodule status',
+    GIT.'fetch origin '.$ref,
+    GIT.'show --summary',
 );
 
-if (is_dir(TARGET_DIR)) {
+if ($work_dir_exist) {
     // delete file
     foreach ($data->commits as $commit) {
-        foreach ($commit->removed as $removed) {
-            $commands[] = 'rm -f '.TARGET_DIR.'/'.$removed;
-        }
+        $commands[] = sprintf('%s diff-tree --name-only --no-commit-id --diff-filter=D -r %s | xargs rm -f',
+            GIT, $commit->id);
     }
-} else {
-    $commands[] = 'mkdir '.TARGET_DIR;
 }
 
-$commands[] = 'git archive '.$branch.' | tar -x -C '.TARGET_DIR;
+$commands[] = GIT.'archive '.$branch.' | tar -x -C '.WORK_DIR;
 
 $output = '';
 foreach ($commands AS $command) {
