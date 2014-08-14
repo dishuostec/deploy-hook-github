@@ -32,7 +32,7 @@ chdir(WORK_DIR);
 $commands = array(
     'echo $PWD',
     //'whoami',
-    GIT.'fetch origin '.$ref,
+    GIT.'fetch origin '.$ref.':'.$branch,
     GIT.'show --summary',
 );
 
