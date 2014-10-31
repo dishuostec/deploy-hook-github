@@ -33,7 +33,7 @@ $commands = array(
     'echo $PWD',
     //'whoami',
     GIT.'fetch origin '.$ref.':'.$branch,
-    GIT.'show --summary',
+    GIT.'show --summary --pretty=oneline '.$branch,
 );
 
 if ($work_dir_exist) {
@@ -45,6 +45,12 @@ if ($work_dir_exist) {
 }
 
 $commands[] = GIT.'archive '.$branch.' | tar -x -C '.WORK_DIR;
+
+if (empty($cmd_after[$project][$branch])) {
+    $commands[] = '# No addtional commands';
+} else {
+    $commands[] = $cmd_after[$project][$branch];
+}
 
 $output = '';
 foreach ($commands AS $command) {
