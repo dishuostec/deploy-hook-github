@@ -16,6 +16,7 @@ $branch = substr($ref, 11);
 
 if (empty($expect_branch[$project][$branch])) {
 	echo 'skip';
+	exit;
 }
 
 define('GIT_DIR', PROJECTS_DIR.'/'.$project.'/.repo');
