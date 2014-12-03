@@ -13,6 +13,11 @@ if (json_last_error() !== JSON_ERROR_NONE) {
 $project = $data->repository->name;
 $ref = $data->ref;
 $branch = substr($ref, 11);
+
+if (empty($expect_branch[$project][$branch])) {
+	echo 'skip';
+}
+
 define('GIT_DIR', PROJECTS_DIR.'/'.$project.'/.repo');
 define('GIT', 'git --git-dir '.GIT_DIR.' ');
 define('WORK_DIR', PROJECTS_DIR.'/'.$project.'/'.$branch);
