@@ -1,70 +1,85 @@
 <?php
-if (file_exists('env.php')) {
-    include_once 'env.php';
+$expect_projects = [];
+if (file_exists('env.php'))
+{
+	include_once 'env.php';
 }
 defined('PROJECTS_DIR') || define('PROJECTS_DIR', '/data/website');
+defined('REPOSITORY_DIR') || define('REPOSITORY_DIR', '/data/repos');
+defined('EXPECT_BRANCH') || define('EXPECT_BRANCH', 'master');
 
 $data = json_decode(file_get_contents('php://input'));
-if (json_last_error() !== JSON_ERROR_NONE) {
-    echo 'invalid json data';
-    exit;
+if (json_last_error() !== JSON_ERROR_NONE)
+{
+	echo 'invalid json data';
+	exit;
 }
 
 $project = $data->repository->name;
-$ref = $data->ref;
-$branch = substr($ref, 11);
+$ref     = $data->ref;
+$branch  = substr($ref, 11);
 
-if (empty($expect_branch[$project][$branch])) {
+if ($branch !== EXPECT_BRANCH || ! in_array($project, $expect_projects))
+{
 	echo 'skip';
 	exit;
 }
 
-define('GIT_DIR', PROJECTS_DIR.'/'.$project.'/.repo');
+define('GIT_DIR', REPOSITORY_DIR.'/'.$project);
 define('GIT', 'git --git-dir '.GIT_DIR.' ');
-define('WORK_DIR', PROJECTS_DIR.'/'.$project.'/'.$branch);
+define('WORK_DIR', PROJECTS_DIR.'/'.$project);
 
-if (! is_dir(GIT_DIR)) {
-    printf('dir not exist: %s', GIT_DIR);
-    exit;
+if ( ! is_dir(GIT_DIR))
+{
+	// clone
+	mkdir(GIT_DIR, 755, TRUE);
+
+	$repo_url   = $data->repository->url;
+	$commands[] = 'git clone --mirror '.$repo_url.' '.GIT_DIR;
 }
 
 $work_dir_exist = is_dir(WORK_DIR);
-if (! $work_dir_exist) {
-    mkdir(WORK_DIR, 755, TRUE);
+if ( ! $work_dir_exist)
+{
+	mkdir(WORK_DIR, 755, TRUE);
 }
 
 chdir(WORK_DIR);
 
-$commands = array(
-    'echo $PWD',
-    //'whoami',
-    GIT.'fetch origin '.$ref.':'.$branch,
-    GIT.'show --summary --pretty=oneline '.$branch,
-);
+$commands[] = 'echo $PWD';
+//$commands[] = 'whoami';
+$commands[] = GIT.'fetch origin '.$ref.':'.$branch;
+$commands[] = GIT.'show --summary --pretty=oneline '.$branch;
 
-if ($work_dir_exist) {
-    // delete file
-    foreach ($data->commits as $commit) {
-        $commands[] = sprintf('%s diff-tree --name-only --no-commit-id --diff-filter=D -r %s | xargs rm -f',
-            GIT, $commit->id);
-    }
+if ($work_dir_exist)
+{
+	// delete file
+	foreach ($data->commits as $commit)
+	{
+		$commands[] = sprintf('%s diff-tree --name-only --no-commit-id --diff-filter=D -r %s | xargs rm -f',
+			GIT, $commit->id);
+	}
 }
 
 $commands[] = GIT.'archive '.$branch.' | tar -x -C '.WORK_DIR;
 
-if (empty($cmd_after[$project][$branch])) {
-    $commands[] = '# No addtional commands';
-} else {
-    $commands[] = $cmd_after[$project][$branch];
+if (empty($cmd_after[$project][$branch]))
+{
+	$commands[] = '# No addtional commands';
+}
+else
+{
+	$commands[] = $cmd_after[$project][$branch];
 }
 
 $output = '';
-foreach ($commands AS $command) {
-    // Run it
-    $tmp = shell_exec($command);
-    // Output
-    $output .= "# {$command}\n";
-    $output .= $tmp."\n";
+foreach ($commands AS $command)
+{
+	// Run it
+	$tmp = shell_exec($command);
+	// Output
+	$output .= "# {$command}\n";
+	$output .= $tmp."\n";
 }
 
 echo $output;
