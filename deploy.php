@@ -25,7 +25,7 @@ if ($branch !== EXPECT_BRANCH || ! in_array($project, $expect_projects))
 	exit;
 }
 
-define('GIT_DIR', REPOSITORY_DIR.'/'.$project);
+define('GIT_DIR', REPOSITORY_DIR.'/'.$project.'.git');
 define('GIT', 'git --git-dir '.GIT_DIR.' ');
 define('WORK_DIR', PROJECTS_DIR.'/'.$project);
 
