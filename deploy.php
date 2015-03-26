@@ -11,7 +11,7 @@ defined('EXPECT_BRANCH') || define('EXPECT_BRANCH', 'master');
 $data = json_decode(file_get_contents('php://input'));
 if ( ! empty($data) || json_last_error() !== JSON_ERROR_NONE)
 {
-	echo 'invalid json data';
+	echo 'invalid json data:'.json_last_error_msg();
 	exit;
 }
 
