@@ -21,7 +21,7 @@ $branch  = substr($ref, 11);
 
 if ($branch !== EXPECT_BRANCH || ! in_array($project, $expect_projects))
 {
-	echo 'skip';
+	echo 'skip '.$branch.'@'.$project;
 	exit;
 }
 
