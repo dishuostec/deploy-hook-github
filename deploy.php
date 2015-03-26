@@ -9,7 +9,7 @@ defined('REPOSITORY_DIR') || define('REPOSITORY_DIR', '/data/repos');
 defined('EXPECT_BRANCH') || define('EXPECT_BRANCH', 'master');
 
 $data = json_decode(file_get_contents('php://input'));
-if (json_last_error() !== JSON_ERROR_NONE)
+if ( ! empty($data) || json_last_error() !== JSON_ERROR_NONE)
 {
 	echo 'invalid json data';
 	exit;
@@ -29,11 +29,14 @@ define('GIT_DIR', REPOSITORY_DIR.'/'.$project);
 define('GIT', 'git --git-dir '.GIT_DIR.' ');
 define('WORK_DIR', PROJECTS_DIR.'/'.$project);
 
+if ( ! is_dir(REPOSITORY_DIR))
+{
+	mkdir(REPOSITORY_DIR, 755, TRUE);
+}
+
 if ( ! is_dir(GIT_DIR))
 {
 	// clone
-	mkdir(GIT_DIR, 755, TRUE);
-
 	$repo_url   = $data->repository->url;
 	$commands[] = 'git clone --mirror '.$repo_url.' '.GIT_DIR;
 }
@@ -82,4 +85,5 @@ foreach ($commands AS $command)
 	$output .= $tmp."\n";
 }
 
+file_put_contents(realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR.'log', $output, LOCK_EX);
 echo $output;
