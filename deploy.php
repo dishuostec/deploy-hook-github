@@ -64,7 +64,7 @@ if ($work_dir_exist)
 	}
 }
 
-$commands[] = GIT.'archive '.$branch.' | tar -x -C '.WORK_DIR;
+$commands[] = GIT.'archive '.$branch.' | tar -x -m -C '.WORK_DIR;
 
 if (empty($cmd_after[$project][$branch]))
 {
