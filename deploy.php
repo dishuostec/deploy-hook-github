@@ -1,4 +1,5 @@
 <?php
+file_put_contents('receive', file_get_contents('php://input'));
 $expect_projects = [];
 if (file_exists('env.php'))
 {
