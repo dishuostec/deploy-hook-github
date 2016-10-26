@@ -1,30 +1,60 @@
 <?php
-file_put_contents('receive', file_get_contents('php://input'));
+define('DOCROOT', realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR);
+
+function debug($data, $clean = FALSE)
+{
+	if (is_array($data))
+	{
+		$data = var_export($data, TRUE);
+	}
+
+	file_put_contents(DOCROOT.'_debug', $data."\n", $clean ? NULL : FILE_APPEND);
+}
+
+debug('START');
+debug(date('Y-m-d H:i:s'), TRUE);
+$json = file_get_contents('php://input');
+debug($json);
+
 $expect_projects = [];
 if (file_exists('env.php'))
 {
+	debug('load env');
 	include_once 'env.php';
+	debug('load env done');
 }
 defined('PROJECTS_DIR') || define('PROJECTS_DIR', '/data/website');
 defined('REPOSITORY_DIR') || define('REPOSITORY_DIR', '/data/repos');
 defined('EXPECT_BRANCH') || define('EXPECT_BRANCH', 'master');
 
-$data = json_decode(file_get_contents('php://input'));
+debug('decode json');
+$data = json_decode($json);
 if (empty($data) || json_last_error() !== JSON_ERROR_NONE)
 {
+	debug('decode json error:'.json_last_error_msg());
 	echo 'invalid json data:'.json_last_error_msg();
 	exit;
 }
+debug('decode json done');
 
 $project = $data->repository->name;
 $ref     = $data->ref;
 $branch  = substr($ref, 11);
 
+debug([
+	'project' => $project,
+	'ref'     => $ref,
+	'branch'  => $branch,
+]);
+
+debug('check branch');
 if ($branch !== EXPECT_BRANCH || ! in_array($project, $expect_projects))
 {
+	debug('skip '.$branch.'@'.$project);
 	echo 'skip '.$branch.'@'.$project;
 	exit;
 }
+debug('check branch done');
 
 define('GIT_DIR', REPOSITORY_DIR.'/'.$project.'.git');
 define('GIT', 'git --git-dir '.GIT_DIR.' ');
@@ -32,6 +62,7 @@ define('WORK_DIR', PROJECTS_DIR.'/'.$project);
 
 if ( ! is_dir(REPOSITORY_DIR))
 {
+	debug('mkdir:'.REPOSITORY_DIR);
 	mkdir(REPOSITORY_DIR, 755, TRUE);
 }
 
@@ -45,10 +76,12 @@ if ( ! is_dir(GIT_DIR))
 $work_dir_exist = is_dir(WORK_DIR);
 if ( ! $work_dir_exist)
 {
+	debug('mkdir:'.WORK_DIR);
 	mkdir(WORK_DIR, 755, TRUE);
 }
 
 chdir(WORK_DIR);
+debug('chdir:'.WORK_DIR);
 
 $commands[] = 'echo $PWD';
 //$commands[] = 'whoami';
@@ -81,10 +114,14 @@ foreach ($commands AS $command)
 {
 	// Run it
 	$tmp = shell_exec($command);
+	debug('exec:'.$command);
+	debug('ret:'.$tmp);
 	// Output
 	$output .= "# {$command}\n";
 	$output .= $tmp."\n";
 }
 
-file_put_contents(realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR.'log', $output, LOCK_EX);
+debug('write log');
+file_put_contents(DOCROOT.'log', $output, LOCK_EX);
 echo $output;
+debug('END');
